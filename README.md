@@ -2,7 +2,7 @@
 
 The record of every paper our lab's reading group has read since 2019, plus the next meeting.
 
-**Website:** https://ORG.github.io/reading-group/ *(update this link after you turn on GitHub Pages)*
+**Website:** https://bu-air-lab.github.io/reading-group/
 
 ## How it works
 
