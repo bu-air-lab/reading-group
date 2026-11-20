@@ -1,0 +1,21 @@
+To: reading-group-air-lab@googlegroups.com
+Subject: Paper Reading Meeting: MM-DD-YYYY
+
+Hi all,
+
+This email is to let you know about our next reading group meeting on <Day> MM/DD/YYYY.
+Please find the details below:
+
+Date: MM-DD-YYYY, <time>
+Location: N09, EB
+Leader: <name>
+Title: "<paper title>"
+Authors: <authors>
+Venue: <venue and year>
+Link: <link>
+Published: MM/DD/YYYY
+
+All past sessions: <website link>
+
+Best regards,
+<your name>

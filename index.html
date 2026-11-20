@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIR Lab Reading Group</title>
+<style>
+  :root {
+    --bg: #fbfaf7; --ink: #1d232b; --muted: #5d6672; --line: #e3e0d8;
+    --accent: #005a43; --accent-soft: #e6f0ec; --card: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 40px 24px 64px; }
+  header h1 { font-size: 30px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 2px 0; color: var(--muted); }
+  header .meta { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; }
+  header .meta b { color: var(--ink); font-weight: 600; }
+  a { color: var(--accent); }
+  .next { margin: 28px 0 8px; background: var(--card); border: 1px solid var(--line);
+          border-left: 4px solid var(--accent); border-radius: 8px; padding: 16px 20px; }
+  .next .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); font-weight: 700; }
+  .next .title { font-size: 18px; font-weight: 600; margin: 4px 0; }
+  .next .sub { color: var(--muted); font-size: 14px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 28px 0 12px; }
+  .tools input { flex: 1 1 280px; padding: 9px 12px; font: inherit; border: 1px solid var(--line);
+                 border-radius: 6px; background: var(--card); }
+  .tools .count { color: var(--muted); font-size: 14px; }
+  nav.years { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  nav.years a { text-decoration: none; font-size: 13px; padding: 3px 10px; border-radius: 99px;
+                background: var(--accent-soft); color: var(--accent); }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 8px; margin: 10px 0; }
+  summary { cursor: pointer; padding: 12px 16px; font-weight: 600; font-size: 16px; list-style: none;
+            display: flex; justify-content: space-between; align-items: baseline; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: "▸"; margin-right: 8px; color: var(--muted); transition: transform .15s; display: inline-block; }
+  details[open] summary::before { transform: rotate(90deg); }
+  summary .n { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: auto; }
+  .tablewrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 9px 14px; border-top: 1px solid var(--line); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 600; background: #f6f4ef; }
+  td.date { white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
+  td.leader { white-space: nowrap; }
+  td.paper a { font-weight: 600; text-decoration: none; }
+  td.paper a:hover { text-decoration: underline; }
+  td .authors { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  td .note { font-size: 12px; color: #8a6d1d; margin-top: 3px; }
+  td.venue { white-space: nowrap; color: var(--muted); }
+  .empty { color: var(--muted); padding: 24px 0; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 13px; border-top: 1px solid var(--line); padding-top: 16px; }
+  @media (max-width: 640px) { td.venue, th.venue { display: none; } td.leader { white-space: normal; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="name">AIR Lab Reading Group</h1>
+    <p id="subtitle"></p>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div id="next"></div>
+
+  <div class="tools">
+    <input id="q" type="search" placeholder="Search by title, author, leader, or venue…" aria-label="Search sessions">
+    <span class="count" id="count"></span>
+  </div>
+  <nav class="years" id="years"></nav>
+  <main id="list"><p class="empty">Loading sessions…</p></main>
+
+  <footer id="footer"></footer>
+</div>
+
+<script>
+// All sessions live in data/sessions.csv. To add a session, add one row there — nothing in this file needs to change.
+
+function parseCSV(text) {
+  const rows = []; let row = [], field = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) {
+      if (c === '"' && text[i + 1] === '"') { field += '"'; i++; }
+      else if (c === '"') q = false;
+      else field += c;
+    } else if (c === '"') q = true;
+    else if (c === ',') { row.push(field); field = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      row.push(field); field = '';
+      if (row.some(v => v.trim() !== '')) rows.push(row);
+      row = [];
+    } else field += c;
+  }
+  row.push(field); if (row.some(v => v.trim() !== '')) rows.push(row);
+  const head = rows.shift().map(h => h.trim());
+  return rows.map(r => Object.fromEntries(head.map((h, i) => [h, (r[i] || '').trim()])));
+}
+
+// Spring = Jan–May, Summer = Jun–Jul, Fall = Aug–Dec
+function semesterOf(date) {
+  const [y, m] = date.split('-').map(Number);
+  const term = m <= 5 ? 'Spring' : m <= 7 ? 'Summer' : 'Fall';
+  const order = m <= 5 ? 1 : m <= 7 ? 2 : 3;
+  return { key: `${y}-${order}`, label: `${term} ${y}`, year: y };
+}
+
+function fmtDate(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', weekday: 'short' });
+}
+
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const today = new Date().toISOString().slice(0, 10);
+let ALL = [];
+
+function render() {
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const past = ALL.filter(s => s.date < today);
+  const shown = past.filter(s => !q || [s.title, s.authors, s.leader, s.venue].join(' ').toLowerCase().includes(q));
+  document.getElementById('count').textContent = `${shown.length} of ${past.length} past sessions`;
+
+  const groups = new Map();
+  for (const s of shown.slice().sort((a, b) => b.date.localeCompare(a.date))) {
+    const sem = semesterOf(s.date);
+    if (!groups.has(sem.key)) groups.set(sem.key, { ...sem, items: [] });
+    groups.get(sem.key).items.push(s);
+  }
+  const list = document.getElementById('list');
+  if (!groups.size) { list.innerHTML = '<p class="empty">No sessions match your search.</p>'; return; }
+
+  const years = [...new Set([...groups.values()].map(g => g.year))];
+  document.getElementById('years').innerHTML = years.map(y => `<a href="#y${y}">${y}</a>`).join('');
+
+  let first = true, seenYear = new Set();
+  list.innerHTML = [...groups.values()].map(g => {
+    const anchor = seenYear.has(g.year) ? '' : ` id="y${g.year}"`; seenYear.add(g.year);
+    const open = first || q ? ' open' : ''; first = false;
+    const rows = g.items.map(s => `
+      <tr>
+        <td class="date">${esc(fmtDate(s.date))}</td>
+        <td class="leader">${esc(s.leader)}</td>
+        <td class="paper">${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.title)}</a>` : esc(s.title)}
+          ${s.authors ? `<div class="authors">${esc(s.authors)}</div>` : ''}
+          ${s.notes ? `<div class="note">${esc(s.notes)}</div>` : ''}</td>
+        <td class="venue">${esc(s.venue)}</td>
+      </tr>`).join('');
+    return `<details${open}${anchor}><summary>${g.label}<span class="n">${g.items.length} session${g.items.length > 1 ? 's' : ''}</span></summary>
+      <div class="tablewrap"><table><thead><tr><th>Date</th><th>Leader</th><th>Paper</th><th class="venue">Venue</th></tr></thead>
+      <tbody>${rows}</tbody></table></div></details>`;
+  }).join('');
+}
+
+function renderHeader(info) {
+  document.title = info.name;
+  document.getElementById('name').textContent = info.name;
+  document.getElementById('subtitle').textContent = info.subtitle || '';
+  const bits = [];
+  if (info.meeting) bits.push(`<span><b>Meets:</b> ${esc(info.meeting)}</span>`);
+  if (info.organizer) bits.push(`<span><b>Organizer:</b> ${esc(info.organizer)}${info.organizer_email ? ` (<a href="mailto:${esc(info.organizer_email)}">${esc(info.organizer_email)}</a>)` : ''}</span>`);
+  document.getElementById('meta').innerHTML = bits.join('');
+  document.getElementById('footer').innerHTML =
+    `Want to suggest a paper or join the mailing list? Email ${info.organizer_email ? `<a href="mailto:${esc(info.organizer_email)}">${esc(info.organizer || 'the organizer')}</a>` : 'the organizer'}.` +
+    (info.lab_url ? ` · <a href="${esc(info.lab_url)}">Lab website</a>` : '') +
+    ` · Sessions before Sep 2023 come from the <a href="https://yding25.com/ReadingGroup/index.html">original reading group page</a>.`;
+}
+
+function renderNext() {
+  const up = ALL.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const el = document.getElementById('next');
+  if (!up.length) { el.innerHTML = ''; return; }
+  const s = up[0];
+  el.innerHTML = `<div class="next"><div class="label">Next meeting</div>
+    <div class="title">${s.link ? `<a href="${esc(s.link)}" target="_blank" rel="noopener">${esc(s.title)}</a>` : esc(s.title)}</div>
+    <div class="sub">${esc(fmtDate(s.date))}${s.time ? ', ' + esc(s.time) : ''}${s.location ? ' · ' + esc(s.location) : ''} · Led by ${esc(s.leader || 'TBD')}${s.venue ? ' · ' + esc(s.venue) : ''}</div>
+    ${s.authors ? `<div class="sub">${esc(s.authors)}</div>` : ''}</div>`;
+}
+
+async function load() {
+  let csvText, info;
+  if (window.EMBEDDED) { csvText = window.EMBEDDED.csv; info = window.EMBEDDED.info; }
+  else {
+    try {
+      [csvText, info] = await Promise.all([
+        fetch('data/sessions.csv', { cache: 'no-cache' }).then(r => r.text()),
+        fetch('data/info.json', { cache: 'no-cache' }).then(r => r.json())
+      ]);
+    } catch (e) {
+      document.getElementById('list').innerHTML =
+        '<p class="empty">Could not load data/sessions.csv. If you opened this file directly, run <code>python3 -m http.server</code> in this folder and visit http://localhost:8000.</p>';
+      return;
+    }
+  }
+  ALL = parseCSV(csvText).filter(s => /^\d{4}-\d{2}-\d{2}$/.test(s.date));
+  renderHeader(info); renderNext(); render();
+  document.getElementById('q').addEventListener('input', render);
+}
+load();
+</script>
+</body>
+</html>
