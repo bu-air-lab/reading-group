@@ -112,12 +112,14 @@ function fmtDate(d) {
 }
 
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const today = new Date().toISOString().slice(0, 10);
+// Local date (not UTC), so evening meetings don't flip early. A meeting counts as past from its own day on.
+const _d = new Date();
+const today = `${_d.getFullYear()}-${String(_d.getMonth() + 1).padStart(2, '0')}-${String(_d.getDate()).padStart(2, '0')}`;
 let ALL = [];
 
 function render() {
   const q = document.getElementById('q').value.trim().toLowerCase();
-  const past = ALL.filter(s => s.date < today);
+  const past = ALL.filter(s => s.date <= today);
   const shown = past.filter(s => !q || [s.title, s.authors, s.leader, s.venue].join(' ').toLowerCase().includes(q));
   document.getElementById('count').textContent = `${shown.length} of ${past.length} past sessions`;
 
@@ -167,7 +169,7 @@ function renderHeader(info) {
 }
 
 function renderNext() {
-  const up = ALL.filter(s => s.date >= today).sort((a, b) => a.date.localeCompare(b.date));
+  const up = ALL.filter(s => s.date > today).sort((a, b) => a.date.localeCompare(b.date));
   const el = document.getElementById('next');
   if (!up.length) { el.innerHTML = ''; return; }
   const s = up[0];
