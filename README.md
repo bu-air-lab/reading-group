@@ -2,7 +2,7 @@
 
 The record of every paper our lab's reading group has read since 2019, plus the next meeting.
 
-**Website:** https://bu-air-lab.github.io/reading-group/
+**Website:** https://ORG.github.io/reading-group/ *(update this link after you turn on GitHub Pages)*
 
 ## How it works
 
@@ -12,23 +12,21 @@ The record of every paper our lab's reading group has read since 2019, plus the 
 
 There is no build step. Once you commit a change, GitHub Pages shows it within about a minute.
 
-## Add a session (about 2 minutes)
+## Adding a session
 
-1. On GitHub, open `data/sessions.csv` and click the pencil icon (**Edit**).
-2. Add one line at the bottom, for example:
-   ```
-   2026-12-04,2-3 pm,"N09, EB",Xiaopeng,SuperMimic: Scaling Humanoid Whole-Body Control with One Differentiable World Model,"Qiayuan Liao, Yiyang Shao, et al.",CoRL 2026,https://arxiv.org/pdf/2610.28480,
-   ```
-3. Click **Commit changes**.
+Append one row to `data/sessions.csv` and commit the change. Each row follows this format:
+
+```
+YYYY-MM-DD,<time>,"<location>",<leader>,<paper title>,"<authors>",<venue>,<link>,<notes>
+```
 
 Rules for the CSV:
 - `date` must be `YYYY-MM-DD`. The page uses it to pick the semester and to decide whether a meeting is past or upcoming.
 - Put any field that contains a comma in double quotes, such as `"N09, EB"` or an author list.
-- Use the leader's full name the way it already appears in the file (for example `Austine Oloo`, not `Austin`), so every person is spelled one way.
 - `notes` is optional. Use it for things like "Moved from 3/27" or "On Zoom".
 - If a meeting is canceled, delete its row. If it moves, change the date.
 
-If you add a future meeting, it appears at the top as **Next meeting**. Once the date passes, it moves into its semester's table on its own.
+If you add a future meeting, it appears at the top as **Next meeting**. On the day of the meeting, it moves into its semester's table on its own.
 
 Semesters are worked out from the date: Spring is Jan–May, Summer is Jun–Jul, and Fall is Aug–Dec.
 
